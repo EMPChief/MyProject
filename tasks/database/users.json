@@ -2,5 +2,13 @@
     "emp": {
         "userid": 1,
         "password": "$2b$12$DUEsx2T3HYfJUMUTLVgWCO7R1vt5cE9G7CpK1Ut2UEAys46fmXtKe"
+    },
+    "empc": {
+        "userid": 2,
+        "password": "$2b$12$1HSTYYPT8GOlWf3mMZAC5.4okqLoNkSCNeDF6j2A9QOQX.EAb6Pxq"
+    },
+    "hello": {
+        "userid": 3,
+        "password": "$2b$12$ni21Qct0ehiKJKUtEnH7LeIfXUqqRNcZnTdw2aXD2Wlc7jLHf4n1m"
     }
 }
