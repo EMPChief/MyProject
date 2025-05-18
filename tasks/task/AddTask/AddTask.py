@@ -1,85 +1,96 @@
-import json
-from pathlib import Path
+"""Task addition functionality."""
+
 from datetime import datetime, timedelta
+from ...i18n import language_manager
+from ..base_task import BaseTask
+from ...utils import print_with_clear
 
 
-class AddTask:
-    DATABASE_DIR = Path(__file__).resolve().parent.parent.parent / "database"
-    ONGOING_TASKS_FILE = DATABASE_DIR / "ongoing.json"
-
-    def __init__(self, user_id):
-        """Initialize the TaskManager with a user ID."""
-        self.user_id = user_id
-
+class AddTask(BaseTask):
     def add_task(self):
         """Add a new task for the user."""
         try:
-            ongoing_tasks = self._load_tasks()
-
-            # Ensure the user has a list of tasks; if not, create one
-            self._initialize_user_tasks(ongoing_tasks)
-
-            # Prompt for task details
+            # Get task details from user
             task_name = self._get_task_detail("Enter task name: ")
             task_description = self._get_task_detail("Enter task description: ")
+            priority = self._get_priority()
+            category = self._get_category()
 
-            # Create and save the new task
-            new_task = self._create_task(task_name, task_description)
-            ongoing_tasks[str(self.user_id)].append(new_task)
-            self._save_tasks(ongoing_tasks)
-
-            print("Task added successfully.")
+            # Create the new task
+            new_task = self._create_task(task_name, task_description, priority, category)
+            
+            # Save the task
+            if self.db.save_user_task(self.user_id, new_task):
+                print_with_clear(language_manager.get_text("TASK_ADDED"))
+            else:
+                self._handle_error(None, "ERROR_SAVING")
 
         except Exception as e:
-            print(f"An error occurred while adding the task: {e}")
-
-    def _initialize_user_tasks(self, ongoing_tasks):
-        """Initialize the user's tasks list if it doesn't exist."""
-        if str(self.user_id) not in ongoing_tasks:
-            ongoing_tasks[str(self.user_id)] = []
+            self._handle_error(e)
 
     def _get_task_detail(self, prompt):
-        """Prompt the user for a task detail."""
-        return input(prompt)
+        """Get task detail from user input."""
+        while True:
+            detail = input(prompt).strip()
+            if detail:
+                return detail
+            print(language_manager.get_text("INVALID_INPUT").format("Input cannot be empty"))
 
-    def _create_task(self, name, description):
-        """Create a new task dictionary with the given name and description."""
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        due_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+    def _get_priority(self):
+        """Get task priority from user."""
+        print_with_clear("\nPriority Levels:")
+        priorities = [
+            language_manager.get_text("PRIORITY_LOW"),
+            language_manager.get_text("PRIORITY_MEDIUM"),
+            language_manager.get_text("PRIORITY_HIGH"),
+            language_manager.get_text("PRIORITY_URGENT")
+        ]
+        for i, priority in enumerate(priorities, 1):
+            print(f"{i}. {priority}")
 
+        while True:
+            try:
+                choice = int(input("Select priority (1-4): "))
+                if 1 <= choice <= 4:
+                    return priorities[choice - 1]
+                print(language_manager.get_text("INVALID_INPUT").format("Invalid priority number"))
+            except ValueError:
+                print(language_manager.get_text("INVALID_INPUT").format("Please enter a number"))
+
+    def _get_category(self):
+        """Get task category from user."""
+        print_with_clear("\nCategories:")
+        categories = [
+            language_manager.get_text("CATEGORY_WORK"),
+            language_manager.get_text("CATEGORY_PERSONAL"),
+            language_manager.get_text("CATEGORY_SHOPPING"),
+            language_manager.get_text("CATEGORY_HEALTH"),
+            language_manager.get_text("CATEGORY_STUDY"),
+            language_manager.get_text("CATEGORY_OTHER")
+        ]
+        for i, category in enumerate(categories, 1):
+            print(f"{i}. {category}")
+
+        while True:
+            try:
+                choice = int(input("Select category (1-6): "))
+                if 1 <= choice <= 6:
+                    return categories[choice - 1]
+                print(language_manager.get_text("INVALID_INPUT").format("Invalid category number"))
+            except ValueError:
+                print(language_manager.get_text("INVALID_INPUT").format("Please enter a number"))
+
+    def _create_task(self, name, description, priority, category):
+        """Create a new task with the given details."""
+        now = datetime.now()
+        
         return {
-            "task_id": self._generate_task_id(),
             "name": name,
             "description": description,
-            "created_at": current_time,
-            "due_date": due_date,
-            "status": "In Progress",
+            "priority": priority,
+            "category": category,
+            "created_at": now.strftime("%Y-%m-%d %H:%M:%S"),
+            "due_date": (now + timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S"),
+            "status": language_manager.get_text("STATUS_IN_PROGRESS")
         }
-
-    def _generate_task_id(self):
-        """Generate a unique task ID based on the current user's task count."""
-        ongoing_tasks = self._load_tasks()
-        return len(ongoing_tasks.get(str(self.user_id), [])) + 1
-
-    def _load_tasks(self):
-        """Load tasks from the ongoing tasks JSON file."""
-        if not self.ONGOING_TASKS_FILE.exists():
-            return {}
-
-        try:
-            with self.ONGOING_TASKS_FILE.open("r") as file:
-                content = file.read()
-                return json.loads(content) if content else {}
-
-        except (IOError, json.JSONDecodeError) as e:
-            print(f"An error occurred while loading tasks: {e}")
-            return {}
-
-    def _save_tasks(self, tasks):
-        """Save tasks to the ongoing tasks JSON file."""
-        try:
-            with self.ONGOING_TASKS_FILE.open("w") as file:
-                json.dump(tasks, file, indent=4)
-        except IOError as e:
-            print(f"An error occurred while saving tasks: {e}")
 

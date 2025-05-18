@@ -10,5 +10,9 @@
     "hello": {
         "userid": 3,
         "password": "$2b$12$ni21Qct0ehiKJKUtEnH7LeIfXUqqRNcZnTdw2aXD2Wlc7jLHf4n1m"
+    },
+    "empchief": {
+        "userid": 4,
+        "password": "$2b$12$BUm1zeeegJ38lf2ZSv24YOa7.6veV/ppnMc1Ahzz4uHrA5mVphBNW"
     }
 }

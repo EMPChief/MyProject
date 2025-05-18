@@ -1,1 +1,2 @@
 bcrypt
+jsonschema>=4.17.3  # For JSON schema validation (optional)
